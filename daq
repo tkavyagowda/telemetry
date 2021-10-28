@@ -1,0 +1,57 @@
+#define num_of_bits 8
+#define data_mask 0x80
+#define clk1 8
+#define dat1 9
+unsigned int tm1=0x0800;
+uint8_t last_state_1=0;
+uint8_t current_state=0;
+void setup()
+{
+  Serial.begin(38400);
+  pinMode(dat1,INPUT);
+  pinMode(clk1,INPUT);
+}
+void loop()
+{
+   while(1)
+  {
+   last_state_1=check_clk_data_send_to_pc_clk(clk1,last_state_1,0);
+  }
+}
+ uint8_t check_clk_data_send_to_pc_clk(uint8_t clock_in,uint8_t last_in_state,byte tm_id)
+{
+     current_state=digitalRead(clock_in);   
+     if(last_in_state==0 and current_state==1)
+     {    
+     if(tm_id==0)
+        {
+         tm1=get_bit(dat1,tm1,tm_id);
+        }
+       }
+     return(current_state);
+  }
+
+ unsigned int get_bit(uint8_t data_line, unsigned int counter_data,byte tm_id)
+ {
+  uint8_t bit_val;
+  uint8_t data_chan=counter_data & 0xff;
+  uint8_t counter=counter_data/256;
+  bit_val = digitalRead(data_line);
+  data_chan=(data_chan*2)|bit_val; 
+  counter=counter-1;
+  if(counter==0)
+  {  
+    Serial.print(data_chan, HEX);
+     counter=num_of_bits;
+     data_chan=data_chan & data_mask;
+     data_chan=data_chan>> num_of_bits;
+  }
+  counter_data=counter*256;  
+  counter_data |= data_chan;
+  return(counter_data);
+  }
+
+
+
+  
+  
