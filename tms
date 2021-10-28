@@ -1,0 +1,66 @@
+#define clk 8
+#define dat 9
+byte fr_sync[3]={0xAC,0xCA,0x1F};
+unsigned int freqcount;
+byte frame_nos;
+
+void setup()
+{
+  pinMode(clk, OUTPUT);
+  pinMode(dat, OUTPUT);
+  TCCR1A=0;
+  TCCR1B = 0;
+  TCCR1B|=(1<<CS10);
+  freqcount=-8000;
+  frame_nos=16;
+  
+ }
+ 
+unsigned int sendbyte(byte data, unsigned int freq)
+{
+  for(int count=0;count<8;count++)
+    {
+     byte b = data & 0x80;
+     b=b>>6;
+     TCNT1 =freq;
+     TIFR1|=(1<<TOV1); 
+     PORTB&=0xFE;
+     PORTB=(PORTB&(0xFD))|(b);
+     while(!(TIFR1&(1<<TOV1)));
+     TCNT1 =freq;
+     TIFR1|=(1<<TOV1);           
+     PORTB|=0x01;
+     while(!(TIFR1&(1<<TOV1)));   
+     data =data<<1;
+    }
+}
+
+void loop()
+{
+  while(1) 
+    for(int fn=0;fn<frame_nos;fn++)
+    {
+      byte sync1=fr_sync[0];
+      byte sync2=fr_sync[1];
+      byte sync3=fr_sync[2];
+     for(byte wrd=0;wrd<128;wrd++)
+     {     
+      if(wrd==0)
+      {
+       sendbyte(sync1,freqcount);
+      }
+      if(wrd==1)
+      {
+       sendbyte(sync2, freqcount);
+      }
+      if(wrd==2)
+      {
+       sendbyte(sync3,freqcount);
+      }
+      if(wrd>2)
+      {
+      sendbyte(fn,freqcount);
+      }
+     }
+    }   
+  }
